@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Profile Dashboard</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f0f2f5;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      transition: all 0.3s ease-in-out;
+      cursor: pointer;
+    }
+
+    .profile-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid #0d6efd;
+    }
+
+    .profile-actions {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .profile-card:hover .profile-actions {
+      display: block;
+    }
+
+    .notification-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* Expandable cards */
+    .expanded {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) scale(1.05);
+      width: 90% !important;
+      height: 90% !important;
+      z-index: 1050;
+      overflow: auto;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container mt-4">
+    <div class="row">
+      <!-- Teacher Profile Card -->
+      <div class="col-md-4">
+        <div class="card text-center profile-card">
+          <div class="card-body">
+        <img src="https://via.placeholder.com/100" alt="No profile picture" class="profile-img mb-3">
+            <h5 class="card-title">{{user}}</h5>
+            <div class="profile-actions">
+              {%if check%}
+              <button class="btn btn-sm btn-warning" onclick="window.location.href='/student-profile?user={{user}}'">
+                <i class="fa fa-edit"></i> update
+              </button>
+              {%else%}
+              <button class="btn btn-sm btn-warning" onclick="window.location.href='/student-profile?user={{user}}'">
+                <i class="fa fa-edit"></i> Edit
+              </button>
+              {%endif%}
+              <button class="btn btn-sm btn-danger" onclick="window.location.href='/'">
+                <i class="fa fa-sign-out-alt"></i> Logout
+              </button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Graph Card -->
+      <div class="col-md-8">
+        <div class="card expandable" id="attendanceCard">
+          <div class="card-header bg-primary text-white">
+            Attendance Overview
+          </div>
+          <div class="card-body text-center">
+            {% if chart %}
+            <img src="data:image/png;base64,{{ chart }}" class="img-fluid" alt="Attendance Chart" />
+            {% else %}
+            <p class="text-muted">No attendance data available</p>
+            {% endif %}
+            <!-- <img src="https://via.placeholder.com/600x300?text=Attendance+Graph" alt="Attendance Graph" class="img-fluid"> -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <!-- Scanner / QR Code Card -->
+      <div class="col-md-4">
+        <div class="card expandable" id="scannerCard">
+          <div class="card-header bg-success text-white">
+            QR Scanner
+          </div>
+          <div class="card-body text-center">
+            {% if chart %}
+            <img src="data:image/png;base64,{{ qr_code }}" class="img-fluid rounded" alt="Attendance Chart" />
+            {% else %}
+            <p class="text-muted">No attendance data available</p>
+            {% endif %}
+            <!-- <video id="qrScanner" width="100%" height="200" style="border:1px solid #ddd;"></video> -->
+            <p class="mt-2">Scanned Data: <span id="scannedData">{{user}}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Timetable Card -->
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            Class Timetable
+          </div>
+          <div class="card-body">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Class</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Monday</td>
+                  <td>09:00 - 10:00</td>
+                  <td>Class 10A</td>
+                </tr>
+                <tr>
+                  <td>Tuesday</td>
+                  <td>10:00 - 11:00</td>
+                  <td>Class 10B</td>
+                </tr>
+                <tr>
+                  <td>Wednesday</td>
+                  <td>11:00 - 12:00</td>
+                  <td>Class 9C</td>
+                </tr>
+                <tr>
+                  <td>Thursday</td>
+                  <td>12:00 - 01:00</td>
+                  <td>Class 8A</td>
+                </tr>
+                <tr>
+                  <td>Friday</td>
+                  <td>01:00 - 02:00</td>
+                  <td>Class 7B</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <!-- Notifications Card -->
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header bg-warning">
+            To-do-List
+          </div>
+          <div class="card-body">
+            <form id="notificationForm">
+              <div class="input-group mb-3">
+                <input type="text" id="notificationInput" class="form-control" placeholder="Enter work" required>
+                <button class="btn btn-primary" type="submit">Add</button>
+              </div>
+            </form>
+            <ul class="list-group notification-list" id="notificationList">
+              <li class="list-group-item">Staff meeting at 2 PM</li>
+              <li class="list-group-item">Submit grades by Friday</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Notification form functionality
+    const notificationForm = document.getElementById('notificationForm');
+    const notificationInput = document.getElementById('notificationInput');
+    const notificationList = document.getElementById('notificationList');
+
+    notificationForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const note = notificationInput.value.trim();
+      if (note) {
+        const li = document.createElement('li');
+        li.textContent = note;
+        li.classList.add('list-group-item');
+        notificationList.appendChild(li);
+        notificationInput.value = '';
+      }
+    });
+
+    // Expandable cards (scanner + attendance)
+    document.querySelectorAll('.expandable').forEach(card => {
+      card.addEventListener('click', function (e) {
+        // Only expand if not clicking inside buttons/inputs
+        if (e.target.tagName !== "BUTTON" && e.target.tagName !== "INPUT") {
+          this.classList.toggle('expanded');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
