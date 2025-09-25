@@ -8,11 +8,15 @@ from flask_mysqldb import MySQL
 from barcode import QRcode
 from datetime import date
 from dayspassed import total_days_passed
-from config import Config
 
 
 app = Flask(__name__)
-app.config.from_object(Config)
+
+app.secret_key='abhishek'
+app.config['MYSQL_HOST'] = "localhost"
+app.config['MYSQL_USER'] ="root"
+app.config['MYSQL_PASSWORD'] = ""
+app.config['MYSQL_DB']= "attan_manage"
 # Initialize MySQL
 con = MySQL(app)
 
@@ -96,13 +100,13 @@ def profile():
     try:
         role = request.form.get("role")
         cur = con.connection.cursor()
-
         if role == "admin":
+            username=session.get('username')
             cur.execute("""
-                INSERT INTO admin_profile(username,full_name,email,phone,password,account_status)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO admin_profile(username,full_name,email,phone,address,password,account_status)
+                VALUES (%s, %s, %s, %s, %s, %s,%s)
             """, (
-                session.get('username'),
+                username,
                 request.form.get("full_name"),
                 request.form.get("email"),
                 request.form.get("phone"),
@@ -112,12 +116,13 @@ def profile():
             ))
 
         elif role == "student":
+            username=session.get('username')
             cur.execute("""
                 INSERT into student_profile(username,full_name,gender,dob,phone,email,address,parent_name,parent_contact,
                 class_name,roll_number,admission_number,section,year_of_admission,current_year)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s)
             """, (
-                session.get('username'),
+                username,
                 request.form.get("full_name"),
                 request.form.get("gender"),
                 request.form.get("dob"),
@@ -136,11 +141,12 @@ def profile():
             ))
 
         elif role == "teacher":
+            username=session.get('username')
             cur.execute("""INSERT INTO teacher_profile(username,full_name,gender,dob,phone,email,address,qualification,
             experience_years,subject_specialization,department) 
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,(
-                    session.get('username'),
+                    username,
                     request.form.get("full_name"),
                     request.form.get("gender"),
                     request.form.get("dob"),
@@ -152,7 +158,6 @@ def profile():
                     request.form.get("subject_specialization"),
                     request.form.get("department")
             ))
-
         con.connection.commit()
         cur.close()
         return "Profile data was saved successfully"
@@ -172,7 +177,7 @@ def student_dashboard():
     
     check_d=False
     if not data:
-        print("empty")
+        pass
     else:
         check_d=True
 
@@ -215,7 +220,6 @@ def student_profile():
     cur=con.connection.cursor()
     cur.execute("""SELECT * from student_profile where username=%s""",(username,))
     data=list(cur.fetchall())
-    print(data)
     cur.close()
     return render_template("students/sprofile.html",user=username,data=data)
 
@@ -226,11 +230,11 @@ def student_profile():
 def teacher():
     username = session.get('username')
     cur=con.connection.cursor()
-    cur.execute("""SELECT * from student_profile where username=%s""",(username,))
+    cur.execute("""SELECT * from teacher_profile where username=%s""",(username,))
     data=list(cur.fetchall())
     check_d=False
     if not data:
-        print("empty")
+        pass
     else:
         check_d=True
 
@@ -247,7 +251,7 @@ def teacher():
     if total_day_present is None:
         cur.close()
         return "No attendance data found", 404
-    print(total_day_present)
+
     present_per = (total_day_present[0] / total_days) * 100
     absent_per = 100 - present_per
 
@@ -285,7 +289,7 @@ def admin():
     data=list(cur.fetchall())
     check_d=False
     if not data:
-        print("empty")
+        pass
     else:
         check_d=True
 
@@ -302,7 +306,6 @@ def admin():
     if total_day_present is None:
         cur.close()
         return "No attendance data found", 404
-    print(total_day_present)
     present_per = (total_day_present[0] / total_days) * 100
     absent_per = 100 - present_per
 
@@ -324,12 +327,12 @@ def admin():
 
 @app.route("/admin-profile")
 def admin_profile():
-    username=session.get('user')
+    username=session.get('username')
     cur=con.connection.cursor()
     cur.execute("""SELECT * from admin_profile where username=%s""",(username,))
     data=list(cur.fetchall())
     cur.close()
-    return render_template("admin/aprofile.html",data=data)
+    return render_template("admin/aprofile.html",data=data,user=username)
 
 
 
